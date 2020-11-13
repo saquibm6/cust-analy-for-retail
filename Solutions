@@ -1,0 +1,80 @@
+
+- setwd("location/to/the/files")
+- customer=read.csv("Customer.csv")
+- product=read.csv("prod_cat_info.csv")
+- transactions=read.csv("Transactions.csv")
+
+1.a
+- t1<-merge(transactions, product, by.x = c("prod_cat_code", "prod_subcat_code"), by.y = c("prod_cat_code", "prod_sub_cat_code"))
+- t2<-merge(t1, customer, by.x = "cust_id", by.y = "customer_Id")
+
+1.b
+- library(dplyr)
+- t1<-left_join(transactions, product, by = c("prod_cat_code"="prod_cat_code", "prod_subcat_code"="prod_sub_cat_code"))
+- t2<-left_join(t1, customer, by = c("cust_id"="customer_Id"))
+
+2.a> sapply(t2, class)
+2.b> head(t2, n=10) | tail(t2, n=10)
+2.c> summary(t2)
+2.d> str(t2) -> table(t2$Gender), table(t2$prod_cat), table(t2$prod_cat_code), table(t2$prod_subcat), table(t2$prod_subcat_code), table(t2$Store_type), table(t2$city_code)
+Note: With read.csv(), no column was imported as a class=factor in the data set but rather character, hence had to find the frequency manually, for each.
+
+3.
+Continous Variables -> DOB, total_amt, Tax, Rate, Qty, transaction_id, tran_date, cust_id
+------------------------
+The hist() used to create histograms are limited to integer/numeric values as an input only. Hence, there are some colums which are continous variables but with class 'character', DOB for expample, and yet not have a histogram.
+- hist(var_num) OR hist(table(var_char))
+------------------------
+- hist(t2$Qty, label=TRUE)
+- hist(t2$cust_id, label=TRUE, breaks=10)
+- t2$DOB<-as.Date(t2$DOB) | ggplot(t2, aes(x=DOB)) + geom_histogram(binwidth=5, colour="white", fill="lightgreen")
+_____________________________________________________________________
+Categorical Variables -> prod_cat_code, prod_subcat_code, Store_type, prod_cat, prod_subcat, Gender, city_Code
+---------------------
+- ggplot(t2, aes(x=factor(prod_cat))) + geom_bar(fill="lightgreen")
+- ggplot(t2, aes(x=factor(prod_cat_code))) + geom_bar()
+- ggplot(t2, aes(x=factor(prod_subcat))) + geom_bar(fill="lightgreen")
+- ggplot(t2, aes(x=factor(prod_subcat_code))) + geom_bar()
+- ggplot(t2, aes(x=factor(Store_type))) + geom_bar()
+- ggplot(t2, aes(x=factor(Gender))) + geom_bar()
+- ggplot(t2, aes(x=factor(city_code))) + geom_bar()
+
+4.a> difftime(max(t2$tran_date), min(t2$tran_date), unit="weeks")
+4.b> nrow(t2[t2$total_amt < 0, ])
+
+5. ggplot(t2, aes(x=prod_cat, fill=Gender)) + geom_bar() + theme_classic()
+
+6.
+- library(reshape2)
+- library(dplyr)
+- six <- melt(t2, id.vars="city_code", measure.vars=c("cust_id"))
+- test <- 0
+- for (var in unique(six$city_code)) { print(paste(var,"=",test[var] <- nrow(unique(dplyr::filter(six, city_code==var))))) }
+- (max(test)/sum(test))*100
+=====City with Code 3 has the highest and it is 10.46512
+
+7.
+- test <- 0
+- for (var in unique(t2$Store_type)) { test[var] <- sum(t2[t2$Store_type==var, 6]) }
+- max(test)
+- test <- 0
+for (var in unique(t2$Store_type)) { test[var] <- sum(t2[t2$Store_type==var, 7]) }
+- max(test)
+=======By Quantity: e-Shop | By value : e-Shop
+
+8. sum(t2[(t2$prod_cat=="Electronics" | t2$prod_cat=="Clothing") & t2$Store_type=="Flagship store", 9])
+
+9. sum(t2[t2$prod_cat=="Electronics" & t2$Gender=="M", 9])
+
+10. 
+- at <- subset(t2, total_amt > 0)
+- test <- 0
+- for (var in unique(at$cust_id)) {if(length(unique(at$transaction_id[t2$cust_id==var]))>10){test <- test + 1}}
+========Count: 27
+
+11.
+- t2$DOB <- as.Date(t2$DOB, "%d-%m-%Y")
+- t2$current_age = as.numeric(difftime(Sys.Date(),t2$DOB, units = "weeks"))/52
+- ael <- subset(t2, current_age >= 25 & current_age <= 35)
+a. sum(ael[ael$prod_cat=="Electronics" | ael$prod_cat=="Books", 9]) ==7176617
+b. sum(ael[ael$tran_date>=as.Date("2014-01-01") | ael$tran_date<=as.Date("2014-03-01"), 9]) ==15218396
